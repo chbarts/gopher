@@ -39,19 +39,16 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 void readcb(struct bufferevent *bev, void *ctx)
 {
     struct evbuffer *input, *output;
-    char *line;
-    size_t n;
+    char line[MAX_LINE], *end;
     int fd;
     struct stat st;
 
     input = bufferevent_get_input(bev);
     output = bufferevent_get_output(bev);
 
-    line = evbuffer_readln(input, &n, EVBUFFER_EOL_LF);
+    evbuffer_remove(input, line, MAX_LINE);
 
-    printf("request: %s\nlength: %d\n", line, (int) n);
-
-    if ((line == NULL) || (line[0] == '\0') || (line[0] == '\n') || (line[0] == '\r')) {
+    if ((line[0] == '\n') || (line[0] == '\r')) {
         /* Received request for selector list. */
         if ((fd = open(".selectors", O_RDONLY)) == -1) {
             evbuffer_add_printf(output,
@@ -68,6 +65,15 @@ void readcb(struct bufferevent *bev, void *ctx)
 
         evbuffer_add_file(output, fd, 0, st.st_size);
     } else {
+        if ((end = memchr(line, '\r', MAX_LINE))
+            || (end = memchr(line, '\n', MAX_LINE))) {
+            *end = '\0';
+        } else {
+            evbuffer_add_printf(output,
+                                "3Malformed request\t\terror.host\t1\r\n");
+            goto end;
+        }
+
         if ((fd = open(line, O_RDONLY)) == -1) {
             evbuffer_add_printf(output,
                                 "3'%s' does not exist (no handler found)\t\terror.host\t1\r\n",
@@ -87,7 +93,6 @@ void readcb(struct bufferevent *bev, void *ctx)
     }
 
   end:
-    free(line);
     bufferevent_free(bev);
 }
 
