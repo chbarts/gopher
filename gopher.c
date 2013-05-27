@@ -51,7 +51,7 @@ void readcb(struct bufferevent *bev, void *ctx)
 
     fprintf(stderr, ":%s|%d:\n", line, (int) n);
 
-    if ((line[0] == '\0') || (line[0] == '\n') || (line[0] == '\r')) {
+    if ((line == NULL) || (line[0] == '\0') || (line[0] == '\n') || (line[0] == '\r')) {
         /* Received request for selector list. */
         if ((fd = open(".selectors", O_RDONLY)) == -1) {
             evbuffer_add_printf(output,
