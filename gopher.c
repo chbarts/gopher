@@ -49,7 +49,7 @@ void readcb(struct bufferevent *bev, void *ctx)
 
     line = evbuffer_readln(input, &n, EVBUFFER_EOL_LF);
 
-    fprintf(stderr, "%s\n", line);
+    fprintf(stderr, ":%s:\n", line);
 
     if (line == NULL) {
         evbuffer_add_printf(output,
