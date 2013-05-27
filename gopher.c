@@ -49,7 +49,7 @@ void readcb(struct bufferevent *bev, void *ctx)
 
     evbuffer_remove(input, line, MAX_LINE);
 
-    hexdump(stdout, line, MAX_LINE, 0);
+    hexdump(stdout, line, 16, 0);
 
     if ((line[0] == '\n') || (line[0] == '\r') || (line[0] == '\t')) {
         /* Received request for selector list. */
