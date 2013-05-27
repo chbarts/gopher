@@ -49,7 +49,7 @@ void readcb(struct bufferevent *bev, void *ctx)
 
     line = evbuffer_readln(input, &n, EVBUFFER_EOL_LF);
 
-    fprintf(stderr, ":%s:\n", line);
+    fprintf(stderr, ":%s|%d:\n", line, (int) n);
 
     if (n == 0) {        /* Received request for selector list. */
         if ((fd = open(".selectors", O_RDONLY)) == -1) {
