@@ -39,61 +39,53 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 
 void readcb(struct bufferevent *bev, void *ctx)
 {
-    struct evbuffer *input, *output;
-    char line[MAX_LINE], *end;
+    char line[MAX_LINE], *end, buf[BUFSIZ];
     int fd;
     struct stat st;
+    size_t len;
 
-    input = bufferevent_get_input(bev);
-    output = bufferevent_get_output(bev);
-
-    evbuffer_remove(input, line, MAX_LINE);
+    bufferevent_read(bev, line, MAX_LINE);
 
     hexdump(stdout, line, MAX_LINE, 0);
 
     if ((line[0] == '\n') || (line[0] == '\r') || (line[0] == '\t')) {
         /* Received request for selector list. */
         if ((fd = open(".selectors", O_RDONLY)) == -1) {
-            evbuffer_add_printf(output,
-                                "3No .selectors file. Bug administrator to fix.\t\terror.host\t1\r\n");
+            bufferevent_write(bev,
+                              "3No .selectors file. Bug administrator to fix.\t\terror.host\t1\r\n",
+                              strlen
+                              ("3No .selectors file. Bug administrator to fix.\t\terror.host\t1\r\n"));
             goto end;
         }
 
-        if (fstat(fd, &st) == -1) {
-            close(fd);
-            evbuffer_add_printf(output,
-                                "3.selectors file present but unreadable.\t\terror.host\t1\r\n");
-            goto end;
-        }
-
-        evbuffer_add_file(output, fd, 0, st.st_size);
     } else {
         if ((end = memchr(line, '\r', MAX_LINE))
             || (end = memchr(line, '\n', MAX_LINE))) {
             *end = '\0';
         } else {
-            evbuffer_add_printf(output,
-                                "3Malformed request\t\terror.host\t1\r\n");
+            bufferevent_write(bev,
+                              "3Malformed request\t\terror.host\t1\r\n",
+                              strlen
+                              ("3Malformed request\t\terror.host\t1\r\n"));
             goto end;
         }
 
         if ((fd = open(line, O_RDONLY)) == -1) {
-            evbuffer_add_printf(output,
-                                "3'%s' does not exist (no handler found)\t\terror.host\t1\r\n",
-                                line);
+            bufferevent_write(bev, "3'", 2);
+            bufferevent_write(bev, line, strlen(line));
+            bufferevent_write(bev,
+                              "' does not exist (no handler found)\t\terror.host\t1\r\n",
+                              strlen
+                              ("' does not exist (no handler found)\t\terror.host\t1\r\n"));
             goto end;
         }
-
-        if (fstat(fd, &st) == -1) {
-            close(fd);
-            evbuffer_add_printf(output,
-                                "3%s present but unreadable.\t\terror.host\t1\r\n",
-                                line);
-            goto end;
-        }
-
-        evbuffer_add_file(output, fd, 0, st.st_size);
     }
+
+    while ((len = read(fd, buf, BUFSIZ)) > 0) {
+        bufferevent_write(bev, buf, len);
+    }
+
+    close(fd);
 
   end:
     bufferevent_flush(bev, EV_WRITE, BEV_FINISHED);
