@@ -49,13 +49,15 @@ void readcb(struct bufferevent *bev, void *ctx)
 
     evbuffer_remove(input, line, MAX_LINE);
 
+/*
     hexdump(stdout, line, 16, 0);
+*/
 
     evbuffer_add_printf(output, "foo!\r\n");
 
     if ((line[0] == '\n') || (line[0] == '\r') || (line[0] == '\t')) {
         /* Received request for selector list. */
-        evbuffer_add_printf(output, "selector:\r\n");
+/*        evbuffer_add_printf(output, "selector:\r\n"); */
         if ((fd = open(".selectors", O_RDONLY)) == -1) {
             evbuffer_add_printf(output,
                                 "3No .selectors file. Bug administrator to fix.\t\terror.host\t1\r\n");
@@ -71,7 +73,7 @@ void readcb(struct bufferevent *bev, void *ctx)
 
         evbuffer_add_file(output, fd, 0, st.st_size);
     } else {
-        evbuffer_add_printf(output, "file:\r\n");
+/*        evbuffer_add_printf(output, "file:\r\n"); */
         if ((end = memchr(line, '\r', MAX_LINE))
             || (end = memchr(line, '\n', MAX_LINE))) {
             *end = '\0';
