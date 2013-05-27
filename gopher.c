@@ -33,6 +33,7 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
+#include "hexdump.h"
 
 #define MAX_LINE PATH_MAX
 
@@ -47,6 +48,8 @@ void readcb(struct bufferevent *bev, void *ctx)
     output = bufferevent_get_output(bev);
 
     evbuffer_remove(input, line, MAX_LINE);
+
+    hexdump(stdout, line, MAX_LINE, 0);
 
     if ((line[0] == '\n') || (line[0] == '\r')) {
         /* Received request for selector list. */
@@ -93,6 +96,7 @@ void readcb(struct bufferevent *bev, void *ctx)
     }
 
   end:
+    bufferevent_flush(bev, EV_WRITE, BEV_FINISHED);
     bufferevent_free(bev);
 }
 
