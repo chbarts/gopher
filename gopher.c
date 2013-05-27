@@ -88,7 +88,7 @@ void readcb(struct bufferevent *bev, void *ctx)
     close(fd);
 
   end:
-    bufferevent_flush(bev, EV_WRITE, BEV_FINISHED);
+    bufferevent_flush(bev, EV_WRITE, BEV_FLUSH);
     bufferevent_free(bev);
 }
 
