@@ -40,9 +40,9 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 void readcb(struct bufferevent *bev, void *ctx)
 {
     struct evbuffer *input, *output;
-    char line[MAX_LINE], *end;
+    char line[MAX_LINE], buf[BUFSIZ], *end;
     int fd;
-    struct stat st;
+    size_t len;
 
     bufferevent_enable(bev, EV_READ | EV_WRITE);
 
@@ -55,7 +55,7 @@ void readcb(struct bufferevent *bev, void *ctx)
     hexdump(stdout, line, 16, 0);
 */
 
-    evbuffer_add_printf(output, "foo!\r\n");
+/*    evbuffer_add_printf(output, "foo!\r\n"); */
 
     if ((line[0] == '\n') || (line[0] == '\r') || (line[0] == '\t')) {
         /* Received request for selector list. */
@@ -66,14 +66,6 @@ void readcb(struct bufferevent *bev, void *ctx)
             goto end;
         }
 
-        if (fstat(fd, &st) == -1) {
-            close(fd);
-            evbuffer_add_printf(output,
-                                "3.selectors file present but unreadable.\t\terror.host\t1\r\n");
-            goto end;
-        }
-
-        evbuffer_add_file(output, fd, 0, st.st_size);
     } else {
 /*        evbuffer_add_printf(output, "file:\r\n"); */
         if ((end = memchr(line, '\r', MAX_LINE))
@@ -92,16 +84,13 @@ void readcb(struct bufferevent *bev, void *ctx)
             goto end;
         }
 
-        if (fstat(fd, &st) == -1) {
-            close(fd);
-            evbuffer_add_printf(output,
-                                "3%s present but unreadable.\t\terror.host\t1\r\n",
-                                line);
-            goto end;
-        }
-
-        evbuffer_add_file(output, fd, 0, st.st_size);
     }
+
+    while ((len = read(fd, buf, BUFSIZ)) > 0) {
+       evbuffer_add(output, buf, len);
+    }
+
+    close(fd);
 
   end:
     bufferevent_flush(bev, EV_WRITE, BEV_FLUSH);
