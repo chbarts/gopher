@@ -51,7 +51,7 @@ void readcb(struct bufferevent *bev, void *ctx)
 
     hexdump(stdout, line, MAX_LINE, 0);
 
-    if ((line[0] == '\n') || (line[0] == '\r')) {
+    if ((line[0] == '\n') || (line[0] == '\r') || (line[0] == '\t')) {
         /* Received request for selector list. */
         if ((fd = open(".selectors", O_RDONLY)) == -1) {
             evbuffer_add_printf(output,
