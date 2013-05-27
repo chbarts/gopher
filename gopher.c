@@ -51,10 +51,7 @@ void readcb(struct bufferevent *bev, void *ctx)
 
     fprintf(stderr, ":%s:\n", line);
 
-    if (line == NULL) {
-        evbuffer_add_printf(output,
-                            "3Server borked. Sorry.\t\terror.host\t1\r\n");
-    } else if (n == 0) {        /* Received request for selector list. */
+    if (n == 0) {        /* Received request for selector list. */
         if ((fd = open(".selectors", O_RDONLY)) == -1) {
             evbuffer_add_printf(output,
                                 "3No .selectors file. Bug administrator to fix.\t\terror.host\t1\r\n");
