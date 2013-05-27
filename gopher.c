@@ -44,6 +44,8 @@ void readcb(struct bufferevent *bev, void *ctx)
     int fd;
     struct stat st;
 
+    bufferevent_enable(bev, EV_READ | EV_WRITE);
+
     input = bufferevent_get_input(bev);
     output = bufferevent_get_output(bev);
 
