@@ -179,6 +179,7 @@ void run(void)
 int main(int argc, char *argv[])
 {
     setvbuf(stdout, NULL, _IONBF, 0);
+    event_enable_debug_mode();
     run();
     return 0;
 }
