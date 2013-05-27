@@ -51,7 +51,7 @@ void readcb(struct bufferevent *bev, void *ctx)
 
     fprintf(stderr, ":%s|%d:\n", line, (int) n);
 
-    if (n == 0) {        /* Received request for selector list. */
+    if (line == NULL) {        /* Received request for selector list. */
         if ((fd = open(".selectors", O_RDONLY)) == -1) {
             evbuffer_add_printf(output,
                                 "3No .selectors file. Bug administrator to fix.\t\terror.host\t1\r\n");
