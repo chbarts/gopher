@@ -37,25 +37,11 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #define MAX_LINE PATH_MAX
 
-void readcb(struct bufferevent *bev, void *ctx)
+void do_gopher(char *line, struct evbuffer *output)
 {
-    struct evbuffer *input, *output;
-    char line[MAX_LINE], buf[BUFSIZ], *end;
+    char buf[BUFSIZ], *end;
     int fd;
     size_t len;
-
-    bufferevent_enable(bev, EV_READ | EV_WRITE);
-
-    input = bufferevent_get_input(bev);
-    output = bufferevent_get_output(bev);
-
-    evbuffer_remove(input, line, MAX_LINE);
-
-/*
-    hexdump(stdout, line, 16, 0);
-*/
-
-/*    evbuffer_add_printf(output, "foo!\r\n"); */
 
     if ((line[0] == '\n') || (line[0] == '\r') || (line[0] == '\t')) {
         /* Received request for selector list. */
@@ -87,90 +73,93 @@ void readcb(struct bufferevent *bev, void *ctx)
     }
 
     while ((len = read(fd, buf, BUFSIZ)) > 0) {
-       evbuffer_add(output, buf, len);
+        evbuffer_add(output, buf, len);
     }
 
     close(fd);
 
   end:
-    bufferevent_write_buffer(bev, output);
-    bufferevent_flush(bev, EV_WRITE, BEV_FLUSH);
+}
+
+void readcb(struct bufferevent *bev, void *ctx)
+{
+    struct evbuffer *input, *output;
+    char line[MAX_LINE];
+
+    input = bufferevent_get_input(bev);
+    output = bufferevent_get_output(bev);
+
+    evbuffer_remove(input, line, MAX_LINE);
+
+    do_gopher(line, output);
+
     bufferevent_free(bev);
 }
 
 void errorcb(struct bufferevent *bev, short error, void *ctx)
 {
     if (error & BEV_EVENT_ERROR) {
-        perror("error:");
+        perror("error: ");
     }
 
     bufferevent_free(bev);
 }
 
-void do_accept(evutil_socket_t listener, short event, void *arg)
+void acceptcb(struct evconnlistener *listener, evutil_socket_t fd,
+              struct sockaddr *address, int socklen, void *ctx)
 {
-    struct event_base *base = arg;
-    struct sockaddr_storage ss;
-    socklen_t slen = sizeof(ss);
-    int fd = accept(listener, (struct sockaddr *) &ss, &slen);
+    struct event_base *base = evconnlistener_get_base(listener);
+    struct bufferevent *bev =
+        bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
 
-    if (fd < 0) {
-        perror("accept");
-    } else if (fd > FD_SETSIZE) {
-        close(fd);
-    } else {
-        struct bufferevent *bev;
-        evutil_make_socket_nonblocking(fd);
-        bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_setcb(bev, readcb, NULL, errorcb, NULL);
-        bufferevent_setwatermark(bev, EV_READ, 0, MAX_LINE);
-        bufferevent_enable(bev, EV_READ | EV_WRITE);
-    }
+    bufferevent_set_cb(bev, readcb, NULL, errorcb, NULL);
+    bufferevent_enable(bev, EV_READ | EV_WRITE);
+}
+
+void accept_errorcb(struct evconnlistener *listener, void *ctx)
+{
+    struct event_base *base = evconnlistener_get_base(listener);
+    int err = EVUTIL_SOCKET_ERROR();
+
+    fprintf(stderr,
+            "Got an error %d (%s) on the listener. Shutting down.\n", err,
+            evutil_socket_error_to_string(err));
+
+    event_base_loopexit(base, NULL);
 }
 
 void run(void)
 {
-    evutil_socket_t listener;
+    struct evconnlistener *listener;
     struct sockaddr_in sin;
-    struct event *listener_event;
-    struct event_base *eventBase;
+    struct event_base *base;
 
-    if ((eventBase = event_base_new()) == NULL) {
-        fprintf(stderr, "event_base_net() error\n");
+    if ((base = event_base_new()) == NULL) {
+        fprintf(stderr, "event_base_new() error\n");
         return;
     }
 
+    memset(&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = 0;
     sin.sin_port = htons(70);
 
-    listener = socket(AF_INET, SOCK_STREAM, 0);
-    evutil_make_socket_nonblocking(listener);
-
-    if (bind(listener, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
-        perror("bind");
+    if ((listener =
+         evconnlistener_new_bind(base, acceptcb, NULL,
+                                 LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSABLE,
+                                 -1, (struct sockaddr *) &sin,
+                                 sizeof(sin))) == NULL) {
+        perror("Couldn't create listener: ");
         return;
     }
 
-    if (listen(listener, 1024) < 0) {
-        perror("listen");
-        return;
-    }
-
-    listener_event =
-        event_new(eventBase, listener, EV_READ | EV_PERSIST, do_accept,
-                  (void *) eventBase);
-    event_add(listener_event, NULL);
-
-    while (event_base_dispatch(eventBase) == 1);
-
-    event_base_free(eventBase);
-    return;
+    evconnlistener_error_cb(listener, accept_errorcb);
+    event_base_dispatch(base);
 }
 
 int main(int argc, char *argv[])
 {
-    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
     event_enable_debug_mode();
     run();
     return 0;
