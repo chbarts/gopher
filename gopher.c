@@ -113,7 +113,7 @@ void acceptcb(struct evconnlistener *listener, evutil_socket_t fd,
     struct bufferevent *bev =
         bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
 
-    bufferevent_set_cb(bev, readcb, NULL, errorcb, NULL);
+    bufferevent_setcb(bev, readcb, NULL, errorcb, NULL);
     bufferevent_enable(bev, EV_READ | EV_WRITE);
 }
 
@@ -154,7 +154,7 @@ void run(void)
         return;
     }
 
-    evconnlistener_error_cb(listener, accept_errorcb);
+    evconnlistener_set_error_cb(listener, accept_errorcb);
     event_base_dispatch(base);
 }
 
