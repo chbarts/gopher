@@ -147,7 +147,7 @@ void run(void)
 
     if ((listener =
          evconnlistener_new_bind(base, acceptcb, NULL,
-                                 LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE,
+                                 LEV_OPT_CLOSE_ON_FREE,
                                  -1, (struct sockaddr *) &sin,
                                  sizeof(sin))) == NULL) {
         perror("Couldn't create listener: ");
