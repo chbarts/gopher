@@ -160,8 +160,6 @@ void run(void)
 
 int main(int argc, char *argv[])
 {
-    setvbuf(stderr, NULL, _IONBF, 0);
-    event_enable_debug_mode();
     run();
     return 0;
 }
