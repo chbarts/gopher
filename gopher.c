@@ -89,6 +89,19 @@ void readcb(struct bufferevent *bev, void *ctx)
 
     do_gopher(line, output);
 
+    switch (bufferevent_flush(bev, EV_WRITE, BEV_FINISHED)) {
+    case 0:
+       fprintf(stderr, "Nothing flushed\n");
+       break;
+    case 1:
+       fprintf(stderr, "Some data flushed\n");
+       break;
+    case -1:
+    default:
+       fprintf(stderr, "Error flushing\n");
+       break;
+    }
+
     bufferevent_free(bev);
 }
 
