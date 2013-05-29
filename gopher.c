@@ -18,15 +18,10 @@ You should have received a copy of the GNU General Public License
 along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include <netinet/in.h>
-#include <sys/socket.h>
-#include <event2/util.h>
-#include <event2/event.h>
 #include <event2/buffer.h>
-#include <event2/thread.h>
 #include <event2/listener.h>
 #include <event2/bufferevent.h>
 #include <limits.h>
-#include <assert.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>

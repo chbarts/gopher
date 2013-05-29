@@ -9,7 +9,7 @@ all: gopher
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 gopher: gopher.o hexdump.o
-	$(CC) -o gopher hexdump.o gopher.o $(CFLAGS) -levent
+	$(CC) -o gopher hexdump.o gopher.o $(CFLAGS) -levent_core
 
 clean:
 	rm gopher *.o
