@@ -42,7 +42,6 @@ void do_gopher(char *line, struct evbuffer *output)
 
     if ((line[0] == '\n') || (line[0] == '\r') || (line[0] == '\t')) {
         /* Received request for selector list. */
-/*        evbuffer_add_printf(output, "selector:\r\n"); */
         if ((fd = open(".selectors", O_RDONLY)) == -1) {
             evbuffer_add_printf(output,
                                 "3No .selectors file. Bug administrator to fix.\t\terror.host\t1\r\n");
@@ -50,7 +49,6 @@ void do_gopher(char *line, struct evbuffer *output)
         }
 
     } else {
-/*        evbuffer_add_printf(output, "file:\r\n"); */
         if ((end = memchr(line, '\r', MAX_LINE))
             || (end = memchr(line, '\n', MAX_LINE))) {
             *end = '\0';
@@ -83,7 +81,6 @@ void do_gopher(char *line, struct evbuffer *output)
 
 void writecb(struct bufferevent *bev, void *ctx)
 {
-    fprintf(stderr, "writecb called\n");
     bufferevent_free(bev);
 }
 
