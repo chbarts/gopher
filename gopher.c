@@ -77,6 +77,11 @@ void do_gopher(char *line, struct evbuffer *output)
     return;
 }
 
+void writecb(struct bufferevent *bev, void *ctx)
+{
+    fprintf(stderr, "writecb called\n");
+}
+
 void readcb(struct bufferevent *bev, void *ctx)
 {
     struct evbuffer *input, *output;
@@ -91,15 +96,15 @@ void readcb(struct bufferevent *bev, void *ctx)
 
     switch (bufferevent_flush(bev, EV_WRITE, BEV_FINISHED)) {
     case 0:
-       fprintf(stderr, "Nothing flushed\n");
-       break;
+        fprintf(stderr, "Nothing flushed\n");
+        break;
     case 1:
-       fprintf(stderr, "Some data flushed\n");
-       break;
+        fprintf(stderr, "Some data flushed\n");
+        break;
     case -1:
     default:
-       fprintf(stderr, "Error flushing\n");
-       break;
+        fprintf(stderr, "Error flushing\n");
+        break;
     }
 
     bufferevent_free(bev);
@@ -121,7 +126,7 @@ void acceptcb(struct evconnlistener *listener, evutil_socket_t fd,
     struct bufferevent *bev =
         bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
 
-    bufferevent_setcb(bev, readcb, NULL, errorcb, NULL);
+    bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
     bufferevent_enable(bev, EV_READ | EV_WRITE);
 }
 
