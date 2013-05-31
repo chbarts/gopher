@@ -32,7 +32,8 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 
 void do_hexdump(struct evbuffer *input, struct evbuffer *output)
 {
-    int len, i = 0, j;
+    static int i = 0;
+    int len, j;
     char buf[16];
 
     while (evbuffer_get_length(input) >= 16) {
