@@ -30,7 +30,6 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
-#include "hexdump.h"
 
 #define MAX_LINE PATH_MAX
 

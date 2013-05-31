@@ -8,11 +8,11 @@ all: gopher hexdump-echo
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-gopher: gopher.o hexdump.o
-	$(CC) -o gopher hexdump.o gopher.o $(CFLAGS) -levent_core
+gopher: gopher.o
+	$(CC) -o gopher gopher.o -levent_core
 
 hexdump-echo: hexdump-echo.o
-	$(CC) -o hexdump-echo hexdump-echo.o $(CFLAGS) -levent_core
+	$(CC) -o hexdump-echo hexdump-echo.o -levent_core
 
 clean:
 	rm gopher hexdump-echo *.o
