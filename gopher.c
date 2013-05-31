@@ -103,7 +103,7 @@ void readcb(struct bufferevent *bev, void *ctx)
     do_gopher(line, output);
 
     /* http://archives.seul.org/libevent/users/Nov-2010/msg00084.html */
-    bufferevent_setwatermark(bev, EV_WRITE, 1, 0);
+    bufferevent_setwatermark(bev, EV_WRITE, 0, 1);
 
     bufferevent_free(bev);
 }
