@@ -80,6 +80,7 @@ void do_gopher(char *line, struct evbuffer *output)
 void writecb(struct bufferevent *bev, void *ctx)
 {
     fprintf(stderr, "writecb called\n");
+    bufferevent_free(bev);
 }
 
 void readcb(struct bufferevent *bev, void *ctx)
@@ -103,9 +104,8 @@ void readcb(struct bufferevent *bev, void *ctx)
     do_gopher(line, output);
 
     /* http://archives.seul.org/libevent/users/Nov-2010/msg00084.html */
+    bufferevent_setcb(bev, NULL, writecb, errorcb, NULL);
     bufferevent_setwatermark(bev, EV_WRITE, 0, 1);
-
-    bufferevent_free(bev);
 }
 
 void errorcb(struct bufferevent *bev, short error, void *ctx)
@@ -124,7 +124,7 @@ void acceptcb(struct evconnlistener *listener, evutil_socket_t fd,
     struct bufferevent *bev =
         bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
 
-    bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
+    bufferevent_setcb(bev, readcb, NULL, errorcb, NULL);
     bufferevent_enable(bev, EV_READ | EV_WRITE);
 }
 
