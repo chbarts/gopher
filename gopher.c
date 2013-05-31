@@ -83,6 +83,15 @@ void writecb(struct bufferevent *bev, void *ctx)
     bufferevent_free(bev);
 }
 
+void errorcb(struct bufferevent *bev, short error, void *ctx)
+{
+    if (error & BEV_EVENT_ERROR) {
+        perror("error: ");
+    }
+
+    bufferevent_free(bev);
+}
+
 void readcb(struct bufferevent *bev, void *ctx)
 {
     struct evbuffer *input, *output;
@@ -106,15 +115,6 @@ void readcb(struct bufferevent *bev, void *ctx)
     /* http://archives.seul.org/libevent/users/Nov-2010/msg00084.html */
     bufferevent_setcb(bev, NULL, writecb, errorcb, NULL);
     bufferevent_setwatermark(bev, EV_WRITE, 0, 1);
-}
-
-void errorcb(struct bufferevent *bev, short error, void *ctx)
-{
-    if (error & BEV_EVENT_ERROR) {
-        perror("error: ");
-    }
-
-    bufferevent_free(bev);
 }
 
 void acceptcb(struct evconnlistener *listener, evutil_socket_t fd,
