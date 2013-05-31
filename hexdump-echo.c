@@ -30,64 +30,42 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 #include <stdio.h>
 #include <errno.h>
 
-#define MAX_LINE PATH_MAX
-
-void do_hexdump(char *buf, struct evbuffer *output)
+void do_hexdump(struct evbuffer *input, struct evbuffer *output)
 {
-    size_t i, j;
+    int len, i, j;
+    char buf[BUFSIZ];
 
-    for (i = 0; i < MAX_LINE; i += 16) {
-        evbuffer_add_printf(output, "%08x: ", i);
-        for (j = i; (j < MAX_LINE) && (j < i + 16); j++) {
-            if (j % 8 == 0)
-                evbuffer_add_printf(output, " ");
-            evbuffer_add_printf(output, "%02x ", buf[j]);
-        }
-
-        if ((i + 16) > MAX_LINE) {      /* We have extra to space-fill. */
-            for (; j < i + 16; j++) {
+    while ((len = evbuffer_remove(input, buf, BUFSIZ)) > 0) {
+        for (i = 0; i < len; i += 16) {
+            evbuffer_add_printf(output, "%08x: ", i);
+            for (j = i; (j < len) && (j < i + 16); j++) {
                 if (j % 8 == 0)
                     evbuffer_add_printf(output, " ");
-                evbuffer_add_printf(output, "   ");
+                evbuffer_add_printf(output, "%02x ", buf[j]);
             }
-        }
 
-        for (j = i; (j < MAX_LINE) && (j < i + 16); j++) {
-            if (j % 8 == 0)
-                evbuffer_add_printf(output, " ");
-            evbuffer_add_printf(output, "%c",
-                                isgraph(buf[j]) ? buf[j] : '.');
-        }
+            if ((i + 16) > len) {       /* We have extra to space-fill. */
+                for (; j < i + 16; j++) {
+                    if (j % 8 == 0)
+                        evbuffer_add_printf(output, " ");
+                    evbuffer_add_printf(output, "   ");
+                }
+            }
 
-        evbuffer_add_printf(output, "\n");
+            for (j = i; (j < len) && (j < i + 16); j++) {
+                if (j % 8 == 0)
+                    evbuffer_add_printf(output, " ");
+                evbuffer_add_printf(output, "%c",
+                                    isgraph(buf[j]) ? buf[j] : '.');
+            }
+
+            evbuffer_add_printf(output, "\n");
+        }
     }
 }
 
-void readcb(struct bufferevent *bev, void *ctx)
+void writecb(struct bufferevent *bev, void *ctx)
 {
-    struct evbuffer *input, *output;
-    char line[MAX_LINE];
-
-    input = bufferevent_get_input(bev);
-    output = bufferevent_get_output(bev);
-
-    evbuffer_remove(input, line, MAX_LINE);
-
-    do_hexdump(line, output);
-
-    switch (bufferevent_flush(bev, EV_WRITE, BEV_FINISHED)) {
-    case 0:
-        fprintf(stderr, "Nothing flushed\n");
-        break;
-    case 1:
-        fprintf(stderr, "Some data flushed\n");
-        break;
-    case -1:
-    default:
-        fprintf(stderr, "Error flushing\n");
-        break;
-    }
-
     bufferevent_free(bev);
 }
 
@@ -98,6 +76,20 @@ void errorcb(struct bufferevent *bev, short error, void *ctx)
     }
 
     bufferevent_free(bev);
+}
+
+void readcb(struct bufferevent *bev, void *ctx)
+{
+    struct evbuffer *input, *output;
+
+    input = bufferevent_get_input(bev);
+    output = bufferevent_get_output(bev);
+
+    do_hexdump(input, output);
+
+    /* http://archives.seul.org/libevent/users/Nov-2010/msg00084.html */
+    bufferevent_setcb(bev, NULL, writecb, errorcb, NULL);
+    bufferevent_setwatermark(bev, EV_WRITE, 0, 1);
 }
 
 void acceptcb(struct evconnlistener *listener, evutil_socket_t fd,
