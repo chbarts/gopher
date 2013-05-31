@@ -35,7 +35,8 @@ void do_hexdump(struct evbuffer *input, struct evbuffer *output)
     int len, i, j;
     char buf[BUFSIZ];
 
-    while ((len = evbuffer_remove(input, buf, BUFSIZ)) > 0) {
+    while ((len = evbuffer_get_length(input)) > 0) {
+        evbuffer_remove(input, buf, len);
         for (i = 0; i < len; i += 16) {
             evbuffer_add_printf(output, "%08x: ", i);
             for (j = i; (j < len) && (j < i + 16); j++) {
