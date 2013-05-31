@@ -53,6 +53,7 @@ void do_hexdump(struct evbuffer *input, struct evbuffer *output)
         }
 
         evbuffer_add_printf(output, "\n");
+        i += 16;
     }
 
     if ((len = evbuffer_get_length(input)) > 0) {
