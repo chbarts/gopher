@@ -30,9 +30,10 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 #include <stdio.h>
 #include <errno.h>
 
+static int i = 0;
+
 void do_hexdump(struct evbuffer *input, struct evbuffer *output)
 {
-    static int i = 0;
     int len, j;
     char buf[16];
 
@@ -55,6 +56,31 @@ void do_hexdump(struct evbuffer *input, struct evbuffer *output)
         evbuffer_add_printf(output, "\n");
         i += 16;
     }
+}
+
+void writecb(struct bufferevent *bev, void *ctx)
+{
+    bufferevent_free(bev);
+}
+
+void errorcb(struct bufferevent *bev, short error, void *ctx)
+{
+    if (error & BEV_EVENT_ERROR) {
+        perror("error: ");
+    }
+
+    bufferevent_free(bev);
+}
+
+void readcb(struct bufferevent *bev, void *ctx)
+{
+    struct evbuffer *input, *output;
+    int len, j;
+
+    input = bufferevent_get_input(bev);
+    output = bufferevent_get_output(bev);
+
+    do_hexdump(input, output);
 
     if ((len = evbuffer_get_length(input)) > 0) {
         evbuffer_remove(input, buf, len);
@@ -81,30 +107,6 @@ void do_hexdump(struct evbuffer *input, struct evbuffer *output)
 
         evbuffer_add_printf(output, "\n");
     }
-}
-
-void writecb(struct bufferevent *bev, void *ctx)
-{
-    bufferevent_free(bev);
-}
-
-void errorcb(struct bufferevent *bev, short error, void *ctx)
-{
-    if (error & BEV_EVENT_ERROR) {
-        perror("error: ");
-    }
-
-    bufferevent_free(bev);
-}
-
-void readcb(struct bufferevent *bev, void *ctx)
-{
-    struct evbuffer *input, *output;
-
-    input = bufferevent_get_input(bev);
-    output = bufferevent_get_output(bev);
-
-    do_hexdump(input, output);
 
     /* http://archives.seul.org/libevent/users/Nov-2010/msg00084.html */
     bufferevent_setcb(bev, NULL, writecb, errorcb, NULL);
@@ -118,6 +120,7 @@ void acceptcb(struct evconnlistener *listener, evutil_socket_t fd,
     struct bufferevent *bev =
         bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
 
+    bufferevent_setwatermark(bev, EV_READ, 16, 0);
     bufferevent_setcb(bev, readcb, NULL, errorcb, NULL);
     bufferevent_enable(bev, EV_READ | EV_WRITE);
 }
