@@ -75,6 +75,7 @@ void errorcb(struct bufferevent *bev, short error, void *ctx)
 void readcb(struct bufferevent *bev, void *ctx)
 {
     struct evbuffer *input, *output;
+    char buf[16];
     int len, j;
 
     input = bufferevent_get_input(bev);
