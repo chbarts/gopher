@@ -32,36 +32,52 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 
 void do_hexdump(struct evbuffer *input, struct evbuffer *output)
 {
-    int len, i, j;
-    char buf[BUFSIZ];
+    int len, i = 0, j;
+    char buf[16];
 
-    while ((len = evbuffer_get_length(input)) > 0) {
-        evbuffer_remove(input, buf, len);
-        for (i = 0; i < len; i += 16) {
-            evbuffer_add_printf(output, "%08x: ", i);
-            for (j = i; (j < len) && (j < i + 16); j++) {
-                if (j % 8 == 0)
-                    evbuffer_add_printf(output, " ");
-                evbuffer_add_printf(output, "%02x ", buf[j]);
-            }
-
-            if ((i + 16) > len) {       /* We have extra to space-fill. */
-                for (; j < i + 16; j++) {
-                    if (j % 8 == 0)
-                        evbuffer_add_printf(output, " ");
-                    evbuffer_add_printf(output, "   ");
-                }
-            }
-
-            for (j = i; (j < len) && (j < i + 16); j++) {
-                if (j % 8 == 0)
-                    evbuffer_add_printf(output, " ");
-                evbuffer_add_printf(output, "%c",
-                                    isgraph(buf[j]) ? buf[j] : '.');
-            }
-
-            evbuffer_add_printf(output, "\n");
+    while (evbuffer_get_length(input) >= 16) {
+        evbuffer_remove(input, buf, 16);
+        evbuffer_add_printf(output, "%08x: ", i);
+        for (j = 0; j < 16; j++) {
+            if (j % 8 == 0)
+                evbuffer_add_printf(output, " ");
+            evbuffer_add_printf(output, "%02x ", buf[j]);
         }
+
+        for (j = 0; j < 16; j++) {
+            if (j % 8 == 0)
+                evbuffer_add_printf(output, " ");
+            evbuffer_add_printf(output, "%c",
+                                isgraph(buf[j]) ? buf[j] : '.');
+        }
+
+        evbuffer_add_printf(output, "\n");
+    }
+
+    if ((len = evbuffer_get_length(input)) > 0) {
+        evbuffer_remove(input, buf, len);
+        evbuffer_add_printf(output, "%08x: ", i);
+
+        for (j = 0; j < len; j++) {
+            if (j % 8 == 0)
+                evbuffer_add_printf(output, " ");
+            evbuffer_add_printf(output, "%02x ", buf[j]);
+        }
+
+        for (; j < 16; j++) {
+            if (j % 8 == 0)
+                evbuffer_add_printf(output, " ");
+            evbuffer_add_printf(output, "   ");
+        }
+
+        for (j = 0; j < len; j++) {
+            if (j % 8 == 0)
+                evbuffer_add_printf(output, " ");
+            evbuffer_add_printf(output, "%c",
+                                isgraph(buf[j]) ? buf[j] : '.');
+        }
+
+        evbuffer_add_printf(output, "\n");
     }
 }
 
