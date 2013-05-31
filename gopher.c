@@ -21,6 +21,8 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 #include <event2/buffer.h>
 #include <event2/listener.h>
 #include <event2/bufferevent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <limits.h>
 #include <unistd.h>
 #include <string.h>
@@ -35,8 +37,8 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 void do_gopher(char *line, struct evbuffer *output)
 {
     char buf[BUFSIZ], *end;
+    struct stat ss;
     int fd;
-    size_t len;
 
     if ((line[0] == '\n') || (line[0] == '\r') || (line[0] == '\t')) {
         /* Received request for selector list. */
@@ -67,11 +69,13 @@ void do_gopher(char *line, struct evbuffer *output)
 
     }
 
-    while ((len = read(fd, buf, BUFSIZ)) > 0) {
-        evbuffer_add(output, buf, len);
+    if (fstat(fd, &ss) == -1) {
+       evbuffer_add_printf(output, "3fstat failed\t\terror.host\t1\r\n");
+       close(fd);
+       goto end;
     }
 
-    close(fd);
+    evbuffer_add_file(output, fd, 0, ss.st_size);
 
   end:
     return;
