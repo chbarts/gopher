@@ -85,12 +85,20 @@ void writecb(struct bufferevent *bev, void *ctx)
 void readcb(struct bufferevent *bev, void *ctx)
 {
     struct evbuffer *input, *output;
+    size_t inlen;
     char line[MAX_LINE];
 
     input = bufferevent_get_input(bev);
     output = bufferevent_get_output(bev);
 
-    evbuffer_remove(input, line, MAX_LINE);
+    inlen = evbuffer_get_length(input);
+
+    if (inlen >= MAX_LINE) {
+        evbuffer_remove(input, line, MAX_LINE);
+        evbuffer_drain(input, inlen - MAX_LINE);
+    } else {
+        evbuffer_remove(input, line, inlen);
+    }
 
     do_gopher(line, output);
 
