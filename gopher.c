@@ -49,7 +49,7 @@ void do_gopher(char *line, struct evbuffer *output)
             goto end;
         }
 
-    } else if (!strcmp(line, "fortune")) {
+    } else if (!strncmp(line, "fortune", 7)) {
         if ((proc = popen("fortune", "rb")) == NULL) {
             evbuffer_add_printf(output,
                                 "3popen() failed.\t\terror.host\t1\r\n");
