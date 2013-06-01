@@ -36,7 +36,9 @@ along with gopher.  If not, see <http://www.gnu.org/licenses/>.  */
 void do_gopher(char *line, struct evbuffer *output)
 {
     char buf[BUFSIZ], *end;
+    FILE *proc;
     struct stat ss;
+    size_t len;
     int fd;
 
     if ((line[0] == '\n') || (line[0] == '\r') || (line[0] == '\t')) {
@@ -46,6 +48,21 @@ void do_gopher(char *line, struct evbuffer *output)
                                 "3No .selectors file. Bug administrator to fix.\t\terror.host\t1\r\n");
             goto end;
         }
+
+    } else if (!strcmp(line, "fortune")) {
+        if ((proc = popen("fortune", "rb")) == NULL) {
+            evbuffer_add_printf(output,
+                                "3popen() failed.\t\terror.host\t1\r\n");
+            goto end;
+        }
+
+        while ((len = fread(buf, 1, BUFSIZ, proc)) > 0) {
+            evbuffer_add(output, buf, len);
+        }
+
+        pclose(proc);
+
+        goto end;
 
     } else {
         if ((end = memchr(line, '\r', MAX_LINE))
@@ -67,9 +84,9 @@ void do_gopher(char *line, struct evbuffer *output)
     }
 
     if (fstat(fd, &ss) == -1) {
-       evbuffer_add_printf(output, "3fstat failed\t\terror.host\t1\r\n");
-       close(fd);
-       goto end;
+        evbuffer_add_printf(output, "3fstat failed\t\terror.host\t1\r\n");
+        close(fd);
+        goto end;
     }
 
     evbuffer_add_file(output, fd, 0, ss.st_size);
