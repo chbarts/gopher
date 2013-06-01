@@ -50,7 +50,7 @@ void do_gopher(char *line, struct evbuffer *output)
         }
 
     } else if (!strncmp(line, "fortune", 7)) {
-        if ((proc = popen("/usr/games/fortune", "rb")) == NULL) {
+        if ((proc = popen("/usr/games/fortune", "r")) == NULL) {
             evbuffer_add_printf(output,
                                 "3popen() failed: %s.\t\terror.host\t1\r\n",
                                 strerror(errno));
