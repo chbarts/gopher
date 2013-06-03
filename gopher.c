@@ -45,14 +45,14 @@ void do_gopher(char *line, struct evbuffer *output)
         /* Received request for selector list. */
         if ((fd = open(".selectors", O_RDONLY)) == -1) {
             evbuffer_add_printf(output,
-                                "3No .selectors file. Bug administrator to fix.\t\terror.host\t1\r\n");
+                                "3No .selectors file. Bug administrator to fix.\t\terror.host\t1\r\n.\r\n");
             goto end;
         }
 
     } else if (!strncmp(line, "fortune", 7)) {
         if ((proc = popen("/usr/games/fortune", "r")) == NULL) {
             evbuffer_add_printf(output,
-                                "3popen() failed: %s.\t\terror.host\t1\r\n",
+                                "3popen() failed: %s.\t\terror.host\t1\r\n.\r\n",
                                 strerror(errno));
             goto end;
         }
@@ -71,13 +71,13 @@ void do_gopher(char *line, struct evbuffer *output)
             *end = '\0';
         } else {
             evbuffer_add_printf(output,
-                                "3Malformed request\t\terror.host\t1\r\n");
+                                "3Malformed request\t\terror.host\t1\r\n.\r\n");
             goto end;
         }
 
         if ((fd = open(line, O_RDONLY)) == -1) {
             evbuffer_add_printf(output,
-                                "3'%s' does not exist (no handler found)\t\terror.host\t1\r\n",
+                                "3'%s' does not exist (no handler found)\t\terror.host\t1\r\n.\r\n",
                                 line);
             goto end;
         }
@@ -85,7 +85,7 @@ void do_gopher(char *line, struct evbuffer *output)
     }
 
     if (fstat(fd, &ss) == -1) {
-        evbuffer_add_printf(output, "3fstat failed\t\terror.host\t1\r\n");
+        evbuffer_add_printf(output, "3fstat failed\t\terror.host\t1\r\n.\r\n");
         close(fd);
         goto end;
     }
